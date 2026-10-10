@@ -1,0 +1,341 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MailGuard AI | Email Security Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+</head>
+
+<body>
+    <div class="app-layout">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <a class="brand" href="#overview">
+                <span class="brand-icon">M</span>
+                <span>MailGuard <small>AI SECURITY</small></span>
+            </a>
+
+            <p class="nav-label">WORKSPACE</p>
+
+            <nav class="navigation">
+                <a href="#overview" class="nav-link active">
+                    <span>▦</span> Dashboard
+                </a>
+                <a href="#analyzer" class="nav-link">
+                    <span>✉</span> Email Analyzer
+                </a>
+                <a href="#history" class="nav-link">
+                    <span>◷</span> Scan History
+                </a>
+                <a href="#analytics" class="nav-link">
+                    <span>▥</span> Model Analytics
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="security-card">
+                    <span class="security-icon">✓</span>
+                    <strong>AI Protection</strong>
+                    <p>Your email analysis system is ready.</p>
+                    <span class="status"><i></i> Model available</span>
+                </div>
+                <p class="sidebar-footer">MAILGUARD AI · STUDENT PROJECT</p>
+            </div>
+        </aside>
+
+        <!-- Main content -->
+        <main class="main-content">
+
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">EMAIL SECURITY / OVERVIEW</p>
+                    <h1>Security Dashboard</h1>
+                    <p class="subtitle">Analyze messages and identify potential spam.</p>
+                </div>
+
+                <div class="topbar-right">
+                    <span class="system-status">
+                        <i></i> System ready
+                    </span>
+                    <div class="avatar">AI</div>
+                </div>
+            </header>
+
+            <!-- Overview -->
+            <section id="overview" class="section">
+                <div class="section-heading">
+                    <div>
+                        <h2>Overview</h2>
+                        <p>Your email classification workspace at a glance.</p>
+                    </div>
+                    <span class="date-label">LIVE SESSION</span>
+                </div>
+
+                <div class="stats-grid">
+                    <article class="stat-card">
+                        <div class="stat-top">
+                            <span>Total scans</span>
+                            <span class="stat-icon blue">▤</span>
+                        </div>
+                        <div class="stat-value" id="totalScans">0</div>
+                        <p>Emails analyzed in this browser</p>
+                    </article>
+
+                    <article class="stat-card">
+                        <div class="stat-top">
+                            <span>Spam detected</span>
+                            <span class="stat-icon red">!</span>
+                        </div>
+                        <div class="stat-value" id="spamCount">0</div>
+                        <p>Messages classified as spam</p>
+                    </article>
+
+                    <article class="stat-card">
+                        <div class="stat-top">
+                            <span>Legitimate emails</span>
+                            <span class="stat-icon green">✓</span>
+                        </div>
+                        <div class="stat-value" id="hamCount">0</div>
+                        <p>Messages classified as ham</p>
+                    </article>
+
+                    <article class="stat-card">
+                        <div class="stat-top">
+                            <span>Best model F1</span>
+                            <span class="stat-icon purple">✦</span>
+                        </div>
+                        <div class="stat-value">98.91<span class="unit">%</span></div>
+                        <p>SVM score on the current test split</p>
+                    </article>
+                </div>
+            </section>
+
+            <!-- Analyzer -->
+            <section id="analyzer" class="section">
+                <div class="section-heading">
+                    <div>
+                        <h2>Email Analyzer</h2>
+                        <p>Inspect an email using your trained machine learning model.</p>
+                    </div>
+                    <span class="model-tag">● SVM MODEL</span>
+                </div>
+
+                <div class="analyzer-grid">
+                    <article class="panel input-panel">
+                        <div class="panel-heading">
+                            <div class="panel-icon">✉</div>
+                            <div>
+                                <h3>Message inspection</h3>
+                                <p>Paste the email text below.</p>
+                            </div>
+                        </div>
+
+                        <form id="analyzerForm" method="POST" action="/">
+                            <label for="emailText">EMAIL CONTENT</label>
+                            <textarea id="emailText"
+                                      name="email_text"
+                                      maxlength="20000"
+                                      placeholder="Paste the email subject and message here..."
+                                      required>{{ email_text }}</textarea>
+
+                            <div class="input-meta">
+                                <span>Text-based analysis</span>
+                                <span id="charCount">0 / 20000</span>
+                            </div>
+
+                            <div class="sample-actions">
+                                <span>Try a sample:</span>
+                                <button type="button" class="text-button"
+                                        data-sample="spam">Spam email</button>
+                                <button type="button" class="text-button"
+                                        data-sample="ham">Legitimate email</button>
+                            </div>
+
+                            <div class="button-row">
+                                <button type="button" id="clearButton"
+                                        class="button-secondary">Clear</button>
+                                <button type="submit" id="analyzeButton"
+                                        class="button-primary">
+                                    Analyze email <span>→</span>
+                                </button>
+                            </div>
+                        </form>
+                    </article>
+
+                    <article class="panel result-panel" aria-live="polite">
+                        <div class="panel-heading">
+                            <div class="panel-icon result-icon">✦</div>
+                            <div>
+                                <h3>Analysis result</h3>
+                                <p>Classification output</p>
+                            </div>
+                        </div>
+
+                        {% if result and result.error %}
+                            <div class="result-state error-state">
+                                <span class="result-symbol">!</span>
+                                <h3>Input required</h3>
+                                <p>{{ result.error }}</p>
+                            </div>
+                        {% elif result %}
+                            <div class="result-state {{ 'spam-state' if result.prediction == 'SPAM' else 'ham-state' }}">
+                                <span class="result-symbol">
+                                    {{ '!' if result.prediction == 'SPAM' else '✓' }}
+                                </span>
+                                <p class="result-caption">PREDICTED CATEGORY</p>
+                                <h2>{{ result.prediction }}</h2>
+                                <p>
+                                    {{ 'Potentially unwanted or suspicious message.' if result.prediction == 'SPAM' else 'Classified as a legitimate message.' }}
+                                </p>
+                            </div>
+
+                            <div class="confidence-row">
+                                <span>Estimated confidence</span>
+                                <strong>{{ result.confidence }}%</strong>
+                            </div>
+                            
+                            <div class="progress-track">
+                                <div class="progress-fill"
+                                     style="width: {{ result.confidence | default(0) }}%">
+                                </div>
+                            </div>
+
+                            <div class="keyword-section">
+                                <h4>Recognized keywords</h4>
+                                <div class="keyword-list">
+                                    {% for keyword in result.keywords %}
+                                        <span class="keyword">{{ keyword }}</span>
+                                    {% else %}
+                                        <span class="muted">No matching words found.</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <p class="fine-print">
+                                Confidence is an uncalibrated estimate from the SVM decision score,
+                                not a calibrated probability. Keywords are vocabulary matches,
+                                not a formal explanation of the prediction.
+                            </p>
+                        {% else %}
+                            <div class="empty-result">
+                                <div class="empty-illustration">
+                                    <span>✉</span>
+                                    <i>✦</i>
+                                </div>
+                                <h3>Ready to analyze</h3>
+                                <p>Your classification result will appear here after you submit an email.</p>
+                                <div class="empty-hint">
+                                    <span>✓</span> Connected to your Flask prediction route
+                                </div>
+                            </div>
+                        {% endif %}
+                    </article>
+                </div>
+            </section>
+
+            <!-- Analytics -->
+            <section id="analytics" class="section">
+                <div class="section-heading">
+                    <div>
+                        <h2>Model Analytics</h2>
+                        <p>Compare the evaluation metrics from your saved model report.</p>
+                    </div>
+                </div>
+
+                <div class="analytics-grid">
+                    <article class="panel chart-panel">
+                        <div class="panel-heading">
+                            <div>
+                                <h3>Model performance</h3>
+                                <p>Accuracy, precision, recall and F1 score</p>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="modelChart"></canvas>
+                        </div>
+                    </article>
+
+                    <article class="panel metric-panel">
+                        <div class="panel-heading">
+                            <div>
+                                <h3>Top performer</h3>
+                                <p>Based on your current evaluation</p>
+                            </div>
+                        </div>
+
+                        <div class="winner-icon">✦</div>
+                        <h2>Support Vector Machine</h2>
+                        <p class="winner-description">
+                            SVM achieved the highest F1 score among the three tested models.
+                        </p>
+
+                        <div class="metric-line">
+                            <span>Accuracy</span><strong>99.48%</strong>
+                        </div>
+                        <div class="metric-line">
+                            <span>Precision</span><strong>100.00%</strong>
+                        </div>
+                        <div class="metric-line">
+                            <span>Recall</span><strong>97.83%</strong>
+                        </div>
+                        <div class="metric-line">
+                            <span>F1 score</span><strong>98.91%</strong>
+                        </div>
+                    </article>
+                </div>
+                <p class="fine-print">
+                    Metrics are from the current test split and should not be interpreted as
+                    a guarantee of performance on new emails.
+                </p>
+            </section>
+
+            <!-- History -->
+            <section id="history" class="section">
+                <div class="section-heading">
+                    <div>
+                        <h2>Recent scan history</h2>
+                        <p>Predictions made in this browser.</p>
+                    </div>
+                    <button type="button" id="clearHistory"
+                            class="button-secondary">Clear history</button>
+                </div>
+
+                <article class="panel history-panel">
+                    <div class="history-table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>EMAIL PREVIEW</th>
+                                    <th>RESULT</th>
+                                    <th>EST. CONFIDENCE</th>
+                                    <th>TIME</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyBody">
+                                <tr id="emptyHistory">
+                                    <td colspan="4" class="history-empty">
+                                        No scans yet. Analyze an email to start your history.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <footer class="page-footer">
+                <span>MailGuard AI · Academic machine learning project</span>
+                <span>Powered by Flask &amp; scikit-learn</span>
+            </footer>
+
+        </main>
+    </div>
+</body>
+</html>
